@@ -1,4 +1,4 @@
-django==2.1
+django
 djangorestframework
 django-cors-middleware
 requests
