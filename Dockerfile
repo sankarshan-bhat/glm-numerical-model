@@ -16,7 +16,7 @@ COPY nginx.conf /etc/nginx/
 COPY frontend.conf /etc/nginx/conf.d/
 COPY ./ui/glm-frontend/build/ /var/www/frontend/
 
-COPY glm /glm_build/
+COPY ./glm-aed2/glm /glm_build/
 
 RUN mkdir /code
 WORKDIR /code
