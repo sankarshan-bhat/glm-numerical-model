@@ -14,7 +14,7 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
 
 COPY nginx.conf /etc/nginx/
 COPY frontend.conf /etc/nginx/conf.d/
-COPY ./ui/glm-frontend/build/ /var/www/frontend/
+COPY ./ui/build/ /var/www/frontend/
 
 COPY ./glm-aed2/glm /glm_build/
 

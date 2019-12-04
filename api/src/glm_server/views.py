@@ -9,25 +9,24 @@ import os, shutil, requests, subprocess, time
 def save_folder(input_path, storage_path, auth_header):
     headers = {'Authorization': auth_header}
 
-    response = requests.get(url="https://api.cdrive.columbusecosystem.com/list/?path=" + input_path, headers=headers)
+    response = requests.get(url=os.environ['CDRIVE_API_URL'] + "list/?path=" + input_path, headers=headers)
     drive_objects = response.json()['driveObjects']
     for dobj in drive_objects:
         if dobj['type'] == 'Folder':
             os.mkdir(storage_path + '/' + dobj['name'])
             save_folder(input_path + '/' + dobj['name'], storage_path + '/' + dobj['name'], auth_header)
         else:
-            url = "https://api.cdrive.columbusecosystem.com/download/?path=" + input_path + '/' + dobj['name']
+            url = os.environ['CDRIVE_API_URL'] + "download/?path=" + input_path + '/' + dobj['name']
             download_url = requests.get(url=url, headers=headers).json()['download_url'] 
             response = requests.get(url=download_url)
             open(storage_path + '/' + dobj['name'], 'wb').write(response.content)
 
-class StartExecutionView(APIView):
+class Execute(APIView):
     parser_class = (JSONParser,)
 
     @csrf_exempt
     def post(self, request):
         input_path = request.data['input_path']
-        output_path = request.data['output_path']
 
         auth_header = request.META['HTTP_AUTHORIZATION']
 
@@ -40,32 +39,53 @@ class StartExecutionView(APIView):
         glm_out_path = glm_path + '/output'
         os.mkdir(glm_out_path)
 
-        subprocess.call('/glm_build/glm', cwd=glm_path)
-        time.sleep(2)
+        with open(glm_out_path + '/out.txt', 'w') as f:
+            subprocess.call('/glm_build/glm', cwd=glm_path, stdout=f)
 
+        return Response(status=status.HTTP_200_OK)
+
+class Save(APIView):
+    parser_class = (JSONParser,)
+
+    @csrf_exempt
+    def post(self, request):
+        output_path = request.data['output_path']
+        auth_header = request.META['HTTP_AUTHORIZATION']
+
+        glm_out_path = '/storage/glm/output'
         for file_name in os.listdir(glm_out_path):
             file_path = glm_out_path + '/' + file_name
             f = open(file_path, 'rb')
             file_arg = {'file': (file_name, f), 'path': (None, output_path)}
-            requests.post('https://api.cdrive.columbusecosystem.com/upload/', files=file_arg, headers={'Authorization': auth_header})
+            requests.post(os.environ['CDRIVE_API_URL'] + 'upload/', files=file_arg, headers={'Authorization': auth_header})
             f.close() 
 
         return Response(status=status.HTTP_200_OK)
 
-class ExecutionStatusView(APIView):
+class Output(APIView):
     parser_class = (JSONParser,)
 
     def get(self, request):
-        return Response(status=status.HTTP_200_OK)
+        data = None
+        with open('/storage/glm/output/out.txt', 'r') as f:
+            data = f.read()
 
-class ClientIdView(APIView):
+        return Response(data, status=status.HTTP_200_OK)
+
+class Specs(APIView):
     parser_class = (JSONParser,)
 
     def get(self, request):
-        client_id = os.environ['COLUMBUS_CLIENT_ID']
-        return Response({"client_id": client_id})
+        data = {
+            'clientId': os.environ['COLUMBUS_CLIENT_ID'],
+            'authUrl': os.environ['AUTHENTICATION_URL'],
+            'cdriveUrl': os.environ['CDRIVE_URL'],
+            'cdriveApiUrl': os.environ['CDRIVE_API_URL'],
+            'username': os.environ['COLUMBUS_USERNAME']
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
-class AuthenticationTokenView(APIView):
+class AuthenticationToken(APIView):
     parser_class = (JSONParser,)
 
     @csrf_exempt
@@ -79,6 +99,6 @@ class AuthenticationTokenView(APIView):
             'client_id': os.environ['COLUMBUS_CLIENT_ID'],
             'client_secret': os.environ['COLUMBUS_CLIENT_SECRET']
         }
-        response = requests.post(url='http://authentication.columbusecosystem.com/o/token/', data=data)
+        response = requests.post(url=os.environ['AUTHENTICATION_URL'] + 'o/token/', data=data)
 
         return Response(response.json(), status=response.status_code)
