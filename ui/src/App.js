@@ -4,6 +4,7 @@ import Cookies from 'universal-cookie';
 import CDrivePathSelector from './CDrivePathSelector.js';
 import TerminalOutput from './TerminalOutput.js';
 import Success from './Success.js';
+import Loading from './Loading.js';
 import './App.css';
 
 class App extends React.Component {
@@ -96,6 +97,10 @@ class App extends React.Component {
     data.append('output_path', path);
     const cookies = new Cookies();
     var auth_header = 'Bearer ' + cookies.get('glm_token');
+    this.setState({
+      isExecuting: true,
+      activeStepIndex: this.state.activeStepIndex + 1
+    });
     const request = axios({
       method: 'POST',
       url: this.state.specs.cdriveUrl + "app/" + this.state.specs.username + "/glm-numerical-model/api/save/",
@@ -104,7 +109,9 @@ class App extends React.Component {
     });
     request.then(
       response => {
-        this.setState({activeStepIndex: this.state.activeStepIndex + 1});
+        this.setState({
+          isExecuting: false
+        });
       },
     );
   }
@@ -155,13 +162,22 @@ class App extends React.Component {
           );
           break;
         case 3:
-          component = (
-            <Success specs={this.state.specs} primaryFn={this.backToCDrive} primaryBtn={"View in CDrive"} 
-              secondaryFn={this.previousStep} secondaryBtn={"Back"} />
-          );
-          header = (
-            <h1 className="h3 mb-3 font-weight-light">Success!</h1>
-          );
+          if (this.state.isExecuting) {
+            component = (
+              <Loading message={"Saving output files to CDrive..."} />
+            );
+            header = (
+              <h1 className="h3 mb-3 font-weight-light">Saving Output</h1>
+            );
+          } else {
+            component = (
+              <Success specs={this.state.specs} primaryFn={this.backToCDrive} primaryBtn={"View in CDrive"} 
+                secondaryFn={this.previousStep} secondaryBtn={"Back"} />
+            );
+            header = (
+              <h1 className="h3 mb-3 font-weight-light">Success!</h1>
+            );
+          }
           break;
         default:
           component = "";

@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from 'axios';
+import Loading from './Loading.js'; 
 import './TerminalOutput.css';
 
 class TerminalOutput extends React.Component {
@@ -22,18 +23,10 @@ class TerminalOutput extends React.Component {
     );
   }
   render() {
-    var loading = (
-      <div className="size-hundred">
-        <div className="size-hundred flex-div">
-          <div className="spinner-border colored-display m-auto" style={{width: "100px", height: "100px"}} role="status">
-            <span className="sr-only"></span>
-          </div>
-        </div>
-        <div className="colored-display large-font text-center m-auto">Simulating General Lake Model... </div>
-      </div>
-    );
     if(this.props.isExecuting) {
-      return (loading);
+      return (
+        <Loading message={"Simulating General Lake Model ..."} />
+      );
     } else if (this.state.output === ""){
       this.getOutput();
       return (null);
