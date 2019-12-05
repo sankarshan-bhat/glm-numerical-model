@@ -33,6 +33,12 @@ class CDrivePathSelector extends React.Component {
           path: path
         });
       },
+      err => {
+        if (err.response.status === 401) {
+          cookies.remove('glm_token');
+          window.location.reload(false);
+        }
+      }
     );
   }
   breadcrumbClick(index) {
