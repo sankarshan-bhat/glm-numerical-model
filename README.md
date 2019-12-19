@@ -2,7 +2,7 @@
 
 ## Updating the binary
 
-Clone the repository:
+Clone the repository::
 
 ```
 git clone https://www.github.com/columbustech/glm-numerical-model
